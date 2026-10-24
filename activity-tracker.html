@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JeysieTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<script>
+(function(){var t;try{t=localStorage.getItem("theme")}catch(e){}
+if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+document.documentElement.dataset.theme=t;})();
+</script>
+<style>
+:root{--bg:#f3f8f8;--surface:#fff;--ink:#12292b;--muted:#5b7476;--line:#d3e3e3;--accent:#0f8b8d;--accent-ink:#fff;--danger:#c0392b;--ok:#1f9d63;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b1c;--surface:#152728;--ink:#e6f2f2;--muted:#8fb0b1;--line:#244244;--accent:#2fc2c4;--accent-ink:#082122;--danger:#ff7a6b;--ok:#4fd69a}}
+:root[data-theme="dark"]{--bg:#0d1b1c;--surface:#152728;--ink:#e6f2f2;--muted:#8fb0b1;--line:#244244;--accent:#2fc2c4;--accent-ink:#082122;--danger:#ff7a6b;--ok:#4fd69a}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+h1{margin:0;font-size:2rem;font-weight:800;letter-spacing:-.02em}
+#today{margin:2px 0 0;color:var(--muted)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.theme-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;white-space:nowrap}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:16px}
+.summary div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:.85rem}
+.summary b{display:block;color:var(--ink);font-size:1.4rem;font-weight:800}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 16px;font-weight:600;white-space:nowrap}
+.tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel{display:none}.panel.active{display:block}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.row input,.row select{flex:1 1 140px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.row input:first-child{flex:2 1 200px}
+.row button{flex:1 1 120px;padding:10px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+li .main{flex:1;min-width:0;overflow-wrap:anywhere}
+li .sub{display:block;color:var(--muted);font-size:.82rem}
+li.done .t{text-decoration:line-through;color:var(--muted)}
+li input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.del{border:0;background:none;color:var(--danger);font-size:1.3rem;line-height:1;padding:4px 8px;border-radius:8px}
+.amt{font-weight:800}
+.late{color:var(--danger)}
+.streak{color:var(--ok);font-weight:600;font-size:.85rem}
+.empty{text-align:center;color:var(--muted);padding:22px;border:1px dashed var(--line);border-radius:12px}
+@media (prefers-reduced-motion:no-preference){.tab,button{transition:background .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>JeysieTracker</h1><p id="today"></p></div>
+    <button id="themeBtn" class="theme-btn" type="button">Dark mode</button>
+  </header>
+
+  <section class="summary">
+    <div><b id="sTasks">0</b>tasks left</div>
+    <div><b id="sHabits">0/0</b>habits done today</div>
+    <div><b id="sSpent">₱0</b>spent this month</div>
+    <div><b id="sGym">0</b>gym days (last 7 days)</div>
+    <div><b id="sSchool">0</b>school work left</div>
+  </section>
+
+  <nav>
+    <button class="tab active" data-tab="tasks">Tasks</button>
+    <button class="tab" data-tab="habits">Habits</button>
+    <button class="tab" data-tab="expenses">Expenses</button>
+    <button class="tab" data-tab="gym">Gym</button>
+    <button class="tab" data-tab="school">School</button>
+  </nav>
+
+  <main>
+    <section id="tasks" class="panel active">
+      <div class="row">
+        <input id="taskInput" placeholder="What do you need to do?">
+        <input id="taskDue" type="date" aria-label="Due date">
+        <button id="taskAdd">Add task</button>
+      </div>
+      <ul id="taskList"></ul>
+    </section>
+
+    <section id="habits" class="panel">
+      <div class="row">
+        <input id="habitInput" placeholder="New habit (e.g. Drink water)">
+        <button id="habitAdd">Add habit</button>
+      </div>
+      <ul id="habitList"></ul>
+    </section>
+
+    <section id="expenses" class="panel">
+      <div class="row">
+        <input id="expDesc" placeholder="What did you spend on?">
+        <input id="expAmt" type="number" min="0" step="0.01" placeholder="Amount (₱)">
+        <select id="expCat" aria-label="Category">
+          <option>Food</option><option>Transport</option><option>Bills</option>
+          <option>School</option><option>Shopping</option><option>Other</option>
+        </select>
+        <button id="expAdd">Add expense</button>
+      </div>
+      <ul id="expList"></ul>
+    </section>
+
+    <section id="gym" class="panel">
+      <div class="row">
+        <input id="gymName" placeholder="Exercise (e.g. Bench press)">
+        <input id="gymSets" type="number" min="1" placeholder="Sets">
+        <input id="gymReps" type="number" min="1" placeholder="Reps">
+        <input id="gymKg" type="number" min="0" step="0.5" placeholder="Weight (kg)">
+        <button id="gymAdd">Log workout</button>
+      </div>
+      <ul id="gymList"></ul>
+    </section>
+
+    <section id="school" class="panel">
+      <div class="row">
+        <input id="schoolName" placeholder="Assignment / exam / project">
+        <input id="schoolSubj" placeholder="Subject (e.g. Math)">
+        <input id="schoolDue" type="date" aria-label="Due date">
+        <button id="schoolAdd">Add school work</button>
+      </div>
+      <ul id="schoolList"></ul>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  var KEY="activity-tracker-v1";
+  var S={tasks:[],habits:[],exp:[],gym:[],school:[]};
+  try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);for(var k in S)if(Array.isArray(p[k]))S[k]=p[k];}}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+  var $=function(id){return document.getElementById(id)};
+  function pad(n){return n<10?"0"+n:""+n}
+  function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  function peso(n){return "₱"+Number(n).toLocaleString("en-PH",{minimumFractionDigits:0,maximumFractionDigits:2})}
+  function fmt(d){return new Date(d+"T00:00:00").toLocaleDateString("en-PH",{month:"short",day:"numeric"})}
+  var today=ymd(new Date());
+  $("today").textContent=new Date().toLocaleDateString("en-PH",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+
+  function dueLabel(d,done){
+    if(!d)return "";
+    var late=!done&&d<today;
+    return '<span class="sub'+(late?' late':'')+'">'+(late?"Overdue · ":"Due ")+fmt(d)+'</span>';
+  }
+  function delBtn(i){return '<button class="del" data-act="del" data-id="'+i+'" aria-label="Delete">×</button>'}
+  function list(el,items,html,msg){el.innerHTML=items.length?items.map(html).join(""):'<li class="empty" style="display:block">'+msg+'</li>'}
+
+  function streak(h){
+    var n=0,d=new Date();
+    if(h.days.indexOf(ymd(d))<0)d.setDate(d.getDate()-1);
+    while(h.days.indexOf(ymd(d))>=0){n++;d.setDate(d.getDate()-1);}
+    return n;
+  }
+
+  function render(){
+    var tasks=S.tasks.slice().sort(function(a,b){return a.done-b.done||(a.due||"9").localeCompare(b.due||"9")});
+    list($("taskList"),tasks,function(t){return '<li class="'+(t.done?"done":"")+'"><input type="checkbox" data-act="toggle" data-id="'+t.id+'"'+(t.done?" checked":"")+' aria-label="Done"><span class="main"><span class="t">'+esc(t.text)+'</span>'+dueLabel(t.due,t.done)+'</span>'+delBtn(t.id)+'</li>'},"No tasks yet. Add your first one above.");
+
+    list($("habitList"),S.habits,function(h){var on=h.days.indexOf(today)>=0,s=streak(h);return '<li class="'+(on?"done":"")+'"><input type="checkbox" data-act="toggle" data-id="'+h.id+'"'+(on?" checked":"")+' aria-label="Done today"><span class="main"><span class="t">'+esc(h.name)+'</span>'+(s?'<span class="streak">'+s+'-day streak</span>':'<span class="sub">No streak yet</span>')+'</span>'+delBtn(h.id)+'</li>'},"No habits yet. Add one you want to repeat daily.");
+
+    var ex=S.exp.slice().sort(function(a,b){return b.date.localeCompare(a.date)});
+    list($("expList"),ex,function(e){return '<li><span class="main"><span class="t">'+esc(e.desc)+'</span><span class="sub">'+esc(e.cat)+' · '+fmt(e.date)+'</span></span><span class="amt">'+peso(e.amt)+'</span>'+delBtn(e.id)+'</li>'},"No expenses logged. Add what you spend to see your monthly total.");
+
+    var gy=S.gym.slice().sort(function(a,b){return b.date.localeCompare(a.date)});
+    list($("gymList"),gy,function(g){return '<li><span class="main"><span class="t">'+esc(g.name)+'</span><span class="sub">'+g.sets+' × '+g.reps+(g.kg?' at '+g.kg+' kg':'')+' · '+fmt(g.date)+'</span></span>'+delBtn(g.id)+'</li>'},"No workouts logged yet.");
+
+    var sc=S.school.slice().sort(function(a,b){return a.done-b.done||(a.due||"9").localeCompare(b.due||"9")});
+    list($("schoolList"),sc,function(w){return '<li class="'+(w.done?"done":"")+'"><input type="checkbox" data-act="toggle" data-id="'+w.id+'"'+(w.done?" checked":"")+' aria-label="Done"><span class="main"><span class="t">'+esc(w.name)+'</span><span class="sub">'+(w.subj?esc(w.subj):"No subject")+'</span>'+dueLabel(w.due,w.done)+'</span>'+delBtn(w.id)+'</li>'},"No school work yet. Add an assignment, exam or project.");
+
+    var month=today.slice(0,7),spent=0;
+    S.exp.forEach(function(e){if(e.date.slice(0,7)===month)spent+=e.amt});
+    var wk=new Date();wk.setDate(wk.getDate()-6);var from=ymd(wk),days={};
+    S.gym.forEach(function(g){if(g.date>=from)days[g.date]=1});
+    var hd=S.habits.filter(function(h){return h.days.indexOf(today)>=0}).length;
+    $("sTasks").textContent=S.tasks.filter(function(t){return !t.done}).length;
+    $("sHabits").textContent=hd+"/"+S.habits.length;
+    $("sSpent").textContent=peso(spent);
+    $("sGym").textContent=Object.keys(days).length;
+    $("sSchool").textContent=S.school.filter(function(w){return !w.done}).length;
+  }
+
+  function val(i){return $(i).value.trim()}
+  function clear(){for(var i=0;i<arguments.length;i++)$(arguments[i]).value=""}
+  function add(key,obj,ids){S[key].push(obj);save();clear.apply(null,ids);render()}
+
+  $("taskAdd").onclick=function(){var t=val("taskInput");if(!t){$("taskInput").focus();return}add("tasks",{id:id(),text:t,due:$("taskDue").value,done:false},["taskInput","taskDue"])};
+  $("habitAdd").onclick=function(){var t=val("habitInput");if(!t){$("habitInput").focus();return}add("habits",{id:id(),name:t,days:[]},["habitInput"])};
+  $("expAdd").onclick=function(){var d=val("expDesc"),a=parseFloat($("expAmt").value);if(!d||!(a>=0)){(d?$("expAmt"):$("expDesc")).focus();return}add("exp",{id:id(),desc:d,amt:a,cat:$("expCat").value,date:today},["expDesc","expAmt"])};
+  $("gymAdd").onclick=function(){var n=val("gymName");if(!n){$("gymName").focus();return}add("gym",{id:id(),name:n,sets:parseInt($("gymSets").value)||1,reps:parseInt($("gymReps").value)||1,kg:parseFloat($("gymKg").value)||0,date:today},["gymName","gymSets","gymReps","gymKg"])};
+  $("schoolAdd").onclick=function(){var n=val("schoolName");if(!n){$("schoolName").focus();return}add("school",{id:id(),name:n,subj:val("schoolSubj"),due:$("schoolDue").value,done:false},["schoolName","schoolSubj","schoolDue"])};
+
+  [["taskInput","taskAdd"],["habitInput","habitAdd"],["expDesc","expAdd"],["gymName","gymAdd"],["schoolName","schoolAdd"]].forEach(function(p){
+    $(p[0]).addEventListener("keydown",function(e){if(e.key==="Enter")$(p[1]).click()});
+  });
+
+  var map={taskList:"tasks",habitList:"habits",expList:"exp",gymList:"gym",schoolList:"school"};
+  Object.keys(map).forEach(function(lid){
+    $(lid).addEventListener("click",function(e){
+      var el=e.target.closest("[data-act]");if(!el)return;
+      var key=map[lid],i=el.dataset.id,item=S[key].filter(function(x){return x.id===i})[0];
+      if(!item)return;
+      if(el.dataset.act==="del"){S[key]=S[key].filter(function(x){return x.id!==i})}
+      else if(key==="habits"){var at=item.days.indexOf(today);if(at>=0)item.days.splice(at,1);else item.days.push(today)}
+      else item.done=!item.done;
+      save();render();
+    });
+  });
+
+  var tabs=document.querySelectorAll(".tab");
+  tabs.forEach(function(b){b.onclick=function(){
+    tabs.forEach(function(x){x.classList.toggle("active",x===b)});
+    document.querySelectorAll(".panel").forEach(function(p){p.classList.toggle("active",p.id===b.dataset.tab)});
+  }});
+
+  function themeLabel(){$("themeBtn").textContent=document.documentElement.dataset.theme==="dark"?"Light mode":"Dark mode"}
+  $("themeBtn").onclick=function(){
+    var n=document.documentElement.dataset.theme==="dark"?"light":"dark";
+    document.documentElement.dataset.theme=n;
+    try{localStorage.setItem("theme",n)}catch(e){}
+    themeLabel();
+  };
+  themeLabel();render();
+})();
+</script>
+</body>
+</html>
